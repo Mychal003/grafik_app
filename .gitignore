@@ -1,0 +1,62 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Wirtualne środowiska
+.venv/
+venv/
+env/
+ENV/
+
+# ==========================
+# Streamlit
+# ==========================
+.streamlit/secrets.toml
+
+# ==========================
+# Edytory i IDE
+# ==========================
+.vscode/
+.idea/
+*.code-workspace
+
+# ==========================
+# Logi
+# ==========================
+*.log
+
+# ==========================
+# Dane tymczasowe
+# ==========================
+*.tmp
+*.temp
+
+# ==========================
+# Pliki Excel generowane przez aplikację
+# ==========================
+*.xlsx
+
+# ==========================
+# System operacyjny
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================
+# Testy i cache
+# ==========================
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ==========================
+# Jupyter
+# ==========================
+.ipynb_checkpoints/
