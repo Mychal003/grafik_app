@@ -13,13 +13,13 @@ st.set_page_config(page_title="Generator Grafików", page_icon="📅", layout="w
 # Dzięki temu aplikacja zapamięta zespół między kliknięciami
 if "pracownicy" not in st.session_state:
     st.session_state.pracownicy = [
-        {"imie": "Anna (Lider)", "is_leader": True, "urlopy": []},
-        {"imie": "Piotr (Lider)", "is_leader": True, "urlopy": []},
-        {"imie": "Krzysztof", "is_leader": False, "urlopy": []},
-        {"imie": "Rafał", "is_leader": False, "urlopy": []},
-        {"imie": "Alicja", "is_leader": False, "urlopy": []},
-        {"imie": "Robert P.", "is_leader": False, "urlopy": []},
-        {"imie": "Robert Z.", "is_leader": False, "urlopy": []}
+        {"imie": "Anna (Lider)", "is_leader": True, "urlopy": [], "dni_wolne": []},
+        {"imie": "Piotr (Lider)", "is_leader": True, "urlopy": [], "dni_wolne": []},
+        {"imie": "Krzysztof", "is_leader": False, "urlopy": [], "dni_wolne": []},
+        {"imie": "Rafał", "is_leader": False, "urlopy": [], "dni_wolne": []},
+        {"imie": "Alicja", "is_leader": False, "urlopy": [], "dni_wolne": []},
+        {"imie": "Robert P.", "is_leader": False, "urlopy": [], "dni_wolne": []},
+        {"imie": "Robert Z.", "is_leader": False, "urlopy": [], "dni_wolne": []}
     ]
 
 st.title("📅 Automatyczny Generator Grafików")
@@ -51,14 +51,15 @@ with st.expander("➕ Dodaj nowego pracownika"):
         nowy_lider = col2.checkbox("Czy to Lider?")
         submitted = st.form_submit_button("Dodaj do zespołu")
         if submitted and nowe_imie:
-            st.session_state.pracownicy.append({"imie": nowe_imie, "is_leader": nowy_lider, "urlopy": []})
+            st.session_state.pracownicy.append({"imie": nowe_imie, "is_leader": nowy_lider, "urlopy": [], "dni_wolne": []})
             st.success(f"Dodano pracownika: {nowe_imie}")
             st.rerun()
 
 # Lista pracowników z możliwością edycji urlopów i usuwania
 st.subheader("Obecny zespół (Wybierz dni urlopu)")
 for i, emp in enumerate(st.session_state.pracownicy):
-    col1, col2, col3, col4 = st.columns([2, 1, 4, 1])
+    # Zmieniamy układ na 5 kolumn
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 3, 3, 1])
     
     with col1:
         st.write(f"**{emp['imie']}**")
@@ -70,20 +71,29 @@ for i, emp in enumerate(st.session_state.pracownicy):
             st.write("-")
             
     with col3:
-        # Pasek wyboru wielu dni z rozwijanej listy
         wybrane_urlopy = st.multiselect(
-            f"Urlop (dni) - {emp['imie']}",
+            f"Urlop - {emp['imie']}",
             options=list(range(1, liczba_dni + 1)),
-            default=[d for d in emp['urlopy'] if d <= liczba_dni],
+            default=[d for d in emp.get('urlopy', []) if d <= liczba_dni],
             key=f"urlop_{i}",
             label_visibility="collapsed",
-            placeholder="Wybierz dni wolne..."
+            placeholder="Urlopy..."
         )
-        # Zapisz zmiany w pamięci
         st.session_state.pracownicy[i]['urlopy'] = wybrane_urlopy
-        
+
     with col4:
-        # Usunięcie pracownika
+        # NOWE: Pasek wyboru żądanych dni wolnych
+        wybrane_wolne = st.multiselect(
+            f"Wolne - {emp['imie']}",
+            options=list(range(1, liczba_dni + 1)),
+            default=[d for d in emp.get('dni_wolne', []) if d <= liczba_dni],
+            key=f"wolne_{i}",
+            label_visibility="collapsed",
+            placeholder="Wolne na żądanie..."
+        )
+        st.session_state.pracownicy[i]['dni_wolne'] = wybrane_wolne
+        
+    with col5:
         if st.button("🗑️ Usuń", key=f"usun_{i}"):
             st.session_state.pracownicy.pop(i)
             st.rerun()

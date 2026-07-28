@@ -60,3 +60,4 @@ htmlcov/
 # Jupyter
 # ==========================
 .ipynb_checkpoints/
+/dist
