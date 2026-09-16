@@ -35,6 +35,17 @@ def rozwiaz_grafik(pracownicy, kalendarz):
         for d in range(1, num_days):
             model.AddImplication(work[(e, d, 2)], work[(e, d+1, 1)].Not())
 
+        # 35h nieprzerwanego odpoczynku tygodniowego (art. 133 KP): zamknięcie (kończy 21:00)
+        # przed dniem wolnym, po którym od razu jest otwarcie (zaczyna 07:00), daje tylko 34h
+        # przerwy - blokujemy tę kombinację niezależnie od tego, czym jest dzień wolny
+        # (niedziela, święto, urlop czy dzień na życzenie)
+        for d in range(1, num_days - 1):
+            model.AddBoolOr([
+                work[(e, d, 2)].Not(),
+                work[(e, d + 1, 0)].Not(),
+                work[(e, d + 2, 1)].Not(),
+            ])
+
         # Wymiar etatu - uwaga: odejmujemy tylko URLOPY, a dni wolne zmuszają 
         # algorytm do rozbicia tych 8 godzin na pozostałe dni robocze
         urlopy_w_robocze = len([day for day in emp.get("urlopy", []) if day in working_days and 1 <= day <= num_days])
@@ -64,6 +75,37 @@ def rozwiaz_grafik(pracownicy, kalendarz):
             # W TYGODNIU: Wystarczy minimum 1 osoba na międzyzmianie (łącznie min. 5 osób)
             model.Add(sum(work[(e, d, 3)] for e in range(num_employees)) >= 1)
             
+    # =====================================================================
+    # FUNKCJA CELU: sprawiedliwy rozkład sobót i zmian zamykających
+    # Bez tego solver zatrzymuje się na pierwszym feasible rozwiązaniu, co
+    # potrafi obarczyć sobotami/zamknięciami zawsze te same osoby.
+    # =====================================================================
+    soboty = kalendarz["soboty"]
+    sat_counts = []
+    closing_counts = []
+    for e in range(num_employees):
+        sat_cnt = model.NewIntVar(0, len(soboty), f'sat_cnt_{e}')
+        model.Add(sat_cnt == sum(work[(e, d, s)] for d in soboty for s in [1, 2, 3]))
+        sat_counts.append(sat_cnt)
+
+        closing_cnt = model.NewIntVar(0, num_days, f'closing_cnt_{e}')
+        model.Add(closing_cnt == sum(work[(e, d, 2)] for d in range(1, num_days + 1)))
+        closing_counts.append(closing_cnt)
+
+    max_sat = model.NewIntVar(0, len(soboty), 'max_sat')
+    model.AddMaxEquality(max_sat, sat_counts)
+    min_sat = model.NewIntVar(0, len(soboty), 'min_sat')
+    model.AddMinEquality(min_sat, sat_counts)
+
+    max_closing = model.NewIntVar(0, num_days, 'max_closing')
+    model.AddMaxEquality(max_closing, closing_counts)
+    min_closing = model.NewIntVar(0, num_days, 'min_closing')
+    model.AddMinEquality(min_closing, closing_counts)
+
+    # Minimalizujemy rozstęp (max-min) między pracownikami - to faktycznie wyrównuje
+    # obciążenie, a nie tylko ogranicza górny limit. Soboty mają priorytet nad zamknięciami.
+    model.Minimize((max_sat - min_sat) * 1000 + (max_closing - min_closing))
+
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 30.0 
     status = solver.Solve(model)

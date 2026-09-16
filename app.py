@@ -7,7 +7,7 @@ from core.scheduler import rozwiaz_grafik
 from core.excel_generator import generuj_plik_excel
 
 # Konfiguracja strony
-st.set_page_config(page_title="Generator Grafików", page_icon="📅", layout="wide")
+st.set_page_config(page_title="Generator Grafików", layout="wide")
 
 # Inicjalizacja stanu (Session State) dla pracowników
 # Dzięki temu aplikacja zapamięta zespół między kliknięciami
@@ -22,7 +22,7 @@ if "pracownicy" not in st.session_state:
         {"imie": "Robert Z.", "is_leader": False, "urlopy": [], "dni_wolne": []}
     ]
 
-st.title("📅 Automatyczny Generator Grafików")
+st.title("Automatyczny Generator Grafików")
 st.markdown("Skonfiguruj zespół, wybierz datę, przypisz urlopy i wygeneruj gotowy plik Excel jednym kliknięciem.")
 
 # ==========================================
@@ -44,7 +44,7 @@ st.sidebar.info(f"Liczba dni roboczych/wolnych zostanie obliczona automatycznie 
 st.header("2. Zarządzanie Zespołem i Urlopami")
 
 # Formularz dodawania pracownika
-with st.expander("➕ Dodaj nowego pracownika"):
+with st.expander("Dodaj nowego pracownika"):
     with st.form("dodaj_pracownika_form"):
         col1, col2 = st.columns([3, 1])
         nowe_imie = col1.text_input("Imię i Nazwisko")
@@ -66,7 +66,7 @@ for i, emp in enumerate(st.session_state.pracownicy):
     
     with col2:
         if emp['is_leader']:
-            st.markdown("👑 *Lider*")
+            st.markdown("**Lider**")
         else:
             st.write("-")
             
@@ -94,7 +94,7 @@ for i, emp in enumerate(st.session_state.pracownicy):
         st.session_state.pracownicy[i]['dni_wolne'] = wybrane_wolne
         
     with col5:
-        if st.button("🗑️ Usuń", key=f"usun_{i}"):
+        if st.button("Usuń", key=f"usun_{i}"):
             st.session_state.pracownicy.pop(i)
             st.rerun()
 
@@ -103,33 +103,33 @@ st.divider()
 # ==========================================
 # EKRAN GŁÓWNY: GENEROWANIE GRAFIKU
 # ==========================================
-st.header("3. Optymalizacja i Pobieranie")
-if st.button("🚀 Uruchom Silnik Algorytmiczny (Generuj)", type="primary", use_container_width=True):
-    with st.spinner("Przeszukuję tysiące kombinacji w poszukiwaniu idealnego grafiku..."):
-        
+st.header("3. Generowanie Grafiku")
+if st.button("Wygeneruj Grafik", type="primary", use_container_width=True):
+    with st.spinner("Trwa generowanie grafiku zgodnie z regułami Kodeksu Pracy i obsady sklepu..."):
+
         # 1. Wygeneruj dynamiczny kalendarz i etaty
         dane_kalendarza = generuj_kalendarz_miesiac(rok, miesiac)
-        
+
         # 2. Uruchom solver matematyczny
         wyniki = rozwiaz_grafik(st.session_state.pracownicy, dane_kalendarza)
-        
+
         # 3. Sprawdź wynik
         if wyniki:
-            st.success("✅ Udało się znaleźć optymalny grafik spełniający wszystkie reguły Kodeksu Pracy i obsady sklepu!")
-            
-            # 4. Zbuduj kolorowego Excela w pamięci RAM
+            st.success("Grafik został wygenerowany zgodnie z regułami Kodeksu Pracy i wymogami obsady sklepu.")
+
+            # 4. Zbuduj Excela w pamięci RAM
             plik_excel_bytes = generuj_plik_excel(wyniki, rok, miesiac)
-            
+
             if plik_excel_bytes:
                 st.download_button(
-                    label="📥 Pobierz wygenerowany grafik (Excel XLSX)",
+                    label="Pobierz grafik (plik XLSX)",
                     data=plik_excel_bytes,
                     file_name=f"Grafik_{rok}_{miesiac:02d}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary"
                 )
         else:
-            st.error("❌ Błąd: Nie udało się ułożyć grafiku przy obecnych ustawieniach.")
-            st.warning("Najczęstsze powody odrzucenia przez algorytm:\n"
+            st.error("Nie udało się wygenerować grafiku dla podanych ustawień.")
+            st.warning("Najczęstsze przyczyny:\n"
                        "1. Zbyt wiele osób (lub wszyscy liderzy) ma urlop w tym samym czasie.\n"
-                       "2. Wybrane urlopy blokują możliwość wyrobienia równego etatu przez pracownika (w 8-godzinnych blokach).")
+                       "2. Wybrane urlopy lub dni wolne uniemożliwiają wyrobienie pełnego etatu przez pracownika (w 8-godzinnych blokach).")
